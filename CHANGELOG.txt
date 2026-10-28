@@ -1,0 +1,57 @@
+2026-10-28
+- Created a native macOS 14+ Swift menu-bar application with a global Cmd+Esc shortcut.
+- Added on-demand OCR of all connected displays using ScreenCaptureKit and Apple Vision, entirely on-device.
+- Added prefix matching, deduplication, automatic insertion for one match, and a searchable keyboard/mouse picker for multiple matches.
+- Added Accessibility-based caret tracking and Unicode text insertion without modifying the clipboard.
+- Added permission setup, secure-field exclusion, focus-change checks, and capture/shortcut error handling.
+- Added a reproducible app-bundle build script, usage/compatibility documentation, and matching tests.
+- Validation: all four matching tests passed; release app built and ad-hoc signed. Live screen capture and cross-app insertion require user-granted macOS permissions and remain unverified.
+
+2026-10-28 — Staged search performance
+- Search the focused editor's existing text first, then the active window's accessibility text, before starting screen capture.
+- Fall back in order to active-window OCR, active-display OCR, and finally remaining-display OCR; stop at the first scope with matches.
+- Bound window accessibility traversal to 150 ms and 200 elements, with short IPC timeouts and background execution.
+- Reuse capture discovery per invocation and capture at the actual backing scale.
+- Remove the fixed 100 ms automatic insertion delay; retain only a short focus-settling delay after closing the picker.
+- Allow accessibility-only matches without requiring Screen Recording at activation.
+- Added five staged-search regression tests covering early exit, single matches, misses, and capture-error fallback. All nine tests passed.
+- Updated documentation for search priority and compatibility. Interactive latency remains unmeasured.
+
+2026-10-28 — Permission diagnostics
+- Replaced the unconditional "allow both permissions" dialog with per-permission status, the running bundle path, Settings links, and Reveal Running App.
+- Removed screen-recording preflight as a startup gate and deferred screen capture permission to the actual OCR fallback.
+- Request Accessibility only when it is missing; report capture errors with their actual domain/code instead of implying all permissions are absent.
+- Confirmed the existing build has a binary-hash-based ad-hoc designated requirement and no valid signing certificate is available on this Mac.
+- Added optional AUTOCOMPLETE_SIGNING_IDENTITY for certificate signing, signature verification, and a clear warning for ad-hoc rebuilds. No additional macOS permissions were added.
+
+2026-10-28 — Picker and focus fixes
+- Handle Cmd+A explicitly in the popup search field to select all filter text.
+- After dismissing the no-results dialog, raise/reactivate the saved target window, restore its focused field, and restore the selection if the field text is unchanged.
+- Strip Unicode punctuation throughout completion candidates, typed-prefix matching, suffix insertion, and picker filtering. Already-typed text is preserved.
+- Added punctuation regression cases covering interior punctuation, smart quotes, non-ASCII punctuation, duplicate normalization, punctuation-only tokens, and suffix insertion.
+
+2026-10-28 — Filename matching inside paths
+- Fixed matching of Text against Sources/Autocomplete/TextTarget.swift: split forward/backslash path components before punctuation normalization instead of merging the path into one token.
+- Apply the same boundaries to the typed prefix and deduplicate repeated filenames across paths.
+- Retain the requested punctuation-free output: TextTarget.swift is suggested as TextTargetswift.
+- Added screenshot-path and backslash/deduplication regression tests.
+
+2026-10-28 — Popup sizing and close button
+- Size the suggestion column and popup from rendered text so suggestions shorter than 50 characters are displayed in full.
+- Shorten only suggestions of 50+ characters to a middle-ellipsis preview; preserve the full value for insertion and tooltips.
+- Allow horizontal scrolling when the available screen width cannot fit a preview.
+- Add the red window close button and route it through the same cancellation and cleanup as Escape.
+
+2026-10-28 — Exclude the word at the cursor
+- Track the complete word at the caret and explicitly exclude it from accessible-text and all OCR search stages, ignoring case and punctuation.
+- Exclude a single-word field such as multi even when the target app omits its caret range; do not guess the cursor location in multi-word fields.
+- Apply exclusions before deciding whether a stage has matches, so a current-word-only result continues to wider scopes.
+- Add regressions for missing caret ranges, cursor-inside-word behavior, UTF-16 positions, and staged fallback.
+
+2026-10-28 — Source highlights
+- Preserve source text elements and OCR token rectangles through staged completion search, including filename/path token ranges.
+- Highlight a unique suggestion's source before insertion and fade the non-interactive overlay over 0.5 seconds.
+- Highlight the selected suggestion when the popup opens and when selection changes by arrows, mouse, or filtering; clear the overlay on cancellation or acceptance.
+- Use Accessibility text-range bounds when available, with a shared lazy window-OCR fallback when an app does not expose geometry. Skip highlights when no reliable bounds can be found.
+- Cancel stale highlight requests during rapid navigation; overlays do not take keyboard focus or mouse input.
+- Add coordinate-mapping and Unicode source-range regression tests. Live overlay behavior across apps/displays still needs verification.
