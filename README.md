@@ -1,4 +1,4 @@
-# Autocomplete for macOS
+# Quaero - autocomplete for the whole of macOS
 
 A small native menu-bar utility. Press **⌘ Esc** while typing to complete a word using text visible anywhere on your connected displays. Runs locally using ScreenCaptureKit and Apple Vision; no server, API key, screenshot files, or clipboard changes.
 
